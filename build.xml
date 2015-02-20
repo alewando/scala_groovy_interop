@@ -1,0 +1,63 @@
+<project name="scala-groovy-interop" default="compile" basedir=".">
+
+  <property environment="env" />
+  <property name="scala-compiler" value="${env.SCALA_HOME}/lib/scala-compiler.jar" />
+  <property name="scala-library"  value="${env.SCALA_HOME}/lib/scala-library.jar" />
+  <property name="scala-reflect"  value="${env.SCALA_HOME}/lib/scala-reflect.jar" />
+  <property name="groovy-library" value="${env.GROOVY_HOME}/embeddable/groovy-all-2.4.0.jar" />
+
+  <path id="cp">
+    <pathelement location="classes" />
+    <pathelement location="${scala-library}" />
+    <pathelement location="${groovy-library}"/>
+  </path>
+
+
+  <target name="init">
+    <available file="${scala-compiler}"  property="scala.found"/>
+    <fail message="Scala not found. Is SCALA_HOME set?" unless="scala.found" />
+    <available file="${groovy-library}"  property="groovy.found"/>
+    <fail message="Groovy not found. Is GROOVY_HOME set?" unless="groovy.found" />
+
+    <mkdir dir="classes" />
+  </target>
+
+  <target name="clean" description="Clean up">
+    <delete dir="classes" />
+  </target>
+
+  <target name="compile" depends="init,compile-groovy,compile-java,compile-scala" description="Compile the source" />
+
+  <target name="compile-java">
+    <javac srcdir="src/java" destdir="classes" classpathref="cp" />
+  </target>
+
+  <target name="compile-groovy">
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
+      <classpath>
+        <pathelement location="${groovy-library}" />
+      </classpath>      
+    </taskdef>
+    <groovyc srcdir="src/groovy" destdir="classes" classpathref="cp">
+      <javac source="1.7" target="1.7" debug="on" />
+    </groovyc>
+  </target>
+
+  <target name="compile-scala">
+    <taskdef resource="scala/tools/ant/antlib.xml">
+      <classpath>
+        <pathelement location="${scala-compiler}" />
+        <pathelement location="${scala-library}" />
+        <pathelement location="${scala-reflect}"/>
+      </classpath>
+    </taskdef>
+    <scalac srcdir="src/scala" destdir="classes" classpathref="cp" logging="debug" />
+
+  </target>
+
+  <target name="jar" depends="compile" description="Create the JAR containing the compiled classes">
+    <jar jarfile="${ant.project.name}.${version}.jar" basedir="classes" />
+  </target>
+
+</project>
+
